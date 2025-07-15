@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev zlib1g-dev libzip-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install intl pdo pdo_mysql zip xml gd opcache bcmath imap xsl
+    && docker-php-ext-install intl pdo pdo_mysql pdo_pgsql zip xml gd opcache bcmath imap xsl
 
 # Aumentar memoria permitida de PHP
 RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memlimit.ini
