@@ -1,22 +1,24 @@
-FROM php:8.1-apache
+FROM php:8.2-apache
 
 # Instalar extensiones necesarias
 RUN apt-get update && apt-get install -y \
-    libicu-dev libxml2-dev libzip-dev unzip git curl zip \
-    && docker-php-ext-install intl pdo pdo_mysql zip xml
+    libicu-dev libxml2-dev libzip-dev unzip git curl zip libpng-dev libonig-dev libjpeg-dev libfreetype6-dev \
+    && docker-php-ext-install intl pdo pdo_mysql zip xml opcache
 
 # Instalar Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copiar archivos de Mautic al contenedor
-COPY . /var/www/html
-
+# Copiar código de Mautic
 WORKDIR /var/www/html
+COPY . .
 
-# Instalar dependencias con Composer
-RUN if [ -f composer.json ]; then composer install --no-interaction --prefer-dist; fi
+# Instalar dependencias
+RUN composer install --no-interaction --prefer-dist || true
 
-# Permisos y configuración de Apache
-RUN chown -R www-data:www-data /var/www/html
-RUN a2enmod rewrite
+# Permisos y configuración Apache
+RUN chown -R www-data:www-data /var/www/html \
+    && a2enmod rewrite
+
+# Exponer puerto
+EXPOSE 80
 
