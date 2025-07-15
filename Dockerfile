@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install intl pdo pdo_mysql zip xml gd opcache bcmath imap xsl
 
+# Aumentar memoria permitida de PHP
+RUN echo "memory_limit=512M" > /usr/local/etc/php/conf.d/memlimit.ini
+
 # Instalar Node.js y npm
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
@@ -18,19 +21,20 @@ RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
 # Instalar Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Establecer directorio de trabajo
+# Directorio de trabajo
 WORKDIR /var/www/html
 
-# Copiar código fuente
+# Copiar el código fuente
 COPY . .
 
-# Instalar dependencias de PHP y JS
-RUN composer install --no-interaction --prefer-dist --no-dev
+# Instalar dependencias
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install --no-interaction --prefer-dist --no-dev
 
-# Verificar que autoload exista
+# Verificar autoload
 RUN test -f /var/www/html/vendor/autoload.php || (echo "❌ composer install falló" && exit 1)
 
-# Permisos y Apache
+# Apache y permisos
 RUN chown -R www-data:www-data /var/www/html && a2enmod rewrite
 
 EXPOSE 80
+
