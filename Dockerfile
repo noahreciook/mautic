@@ -1,24 +1,27 @@
 FROM php:8.2-apache
 
-# Instalar extensiones necesarias
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
-    libicu-dev libxml2-dev libzip-dev unzip git curl zip libpng-dev libonig-dev libjpeg-dev libfreetype6-dev \
-    && docker-php-ext-install intl pdo pdo_mysql zip xml opcache
+    libicu-dev libxml2-dev libzip-dev unzip git curl zip \
+    libpng-dev libjpeg-dev libfreetype6-dev libonig-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install intl pdo pdo_mysql zip xml gd opcache
 
 # Instalar Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copiar código de Mautic
+# Establecer directorio de trabajo
 WORKDIR /var/www/html
+
+# Copiar todo el código
 COPY . .
 
-# Instalar dependencias
-RUN composer install --no-interaction --prefer-dist || true
+# Instalar dependencias de PHP
+RUN composer install --no-interaction --prefer-dist --no-dev
 
-# Permisos y configuración Apache
-RUN chown -R www-data:www-data /var/www/html \
-    && a2enmod rewrite
+# Verificar que autoload exista
+RUN test -f /var/www/html/vendor/autoload.php || (echo "❌ composer install falló" && exit 1)
 
-# Exponer puerto
-EXPOSE 80
+# Permisos
+RUN chown -R www-data:www-data /var/www/html && a2enmod rewrite
 
